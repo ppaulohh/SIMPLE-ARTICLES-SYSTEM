@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  # 1. BD PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: simple_user # Nome do usuário do BD
+      POSTGRES_PASSWORD: 132531  # Sua senha
+      POSTGRES_DB: simple_articles_db
+    ports:
+      - "5432:5432" 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Serviço da Aplicação NestJS
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: articles_app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      # Variáveis de ambiente da aplicação
+      DATABASE_URL: postgresql://simple_user:132531@db:5432/simple_articles_db 
+      NODE_ENV: development
+      JWT_SECRET: "sua_chave_secreta_aqui" 
+    volumes:
+      # Volume para hot-reload
+      - .:/app 
+      - /app/node_modules
+      
+    # Executa migrações, seed, e inicia a aplicação.
+    entrypoint: ["/bin/bash", "wait-for-db.sh"] 
+
+volumes:
+  postgres_data:

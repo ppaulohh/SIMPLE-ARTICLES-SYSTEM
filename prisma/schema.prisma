@@ -1,0 +1,54 @@
+// Define o provedor de banco de dados
+datasource db {
+  provider = "postgresql"
+  // O URL de conexão será lido do ambiente (DATABASE_URL), 
+  // confiando na correção que você fez no PrismaService.
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Modelo de Permissões (Roles)
+// Requisito: Implemente uma tabela para as permissões com os campos nome e descrição [cite: 13]
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // 'Admin', 'Editor', 'Reader'
+  description String?
+
+  // Relação 1:N com User
+  users       User[]
+}
+
+// 2. Modelo de Usuários
+// Requisito: Usuários devem conter nome, senha e email [cite: 8]
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password      String   // Armazenaremos o HASH da senha
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relacionamento N:1 com Permissão
+  permissionId  Int
+  permission    Permission @relation(fields: [permissionId], references: [id])
+
+  // Relacionamento 1:N com Article (artigos criados pelo usuário)
+  articles      Article[]
+}
+
+// 3. Modelo de Artigos
+// Requisito: Artigos devem conter título, conteúdo e a informação de quem o criou [cite: 11]
+model Article {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamento N:1 com User (Quem criou)
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
